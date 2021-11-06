@@ -19,21 +19,26 @@ function ImageGallery({ imageName }) {
   const [bigImg, setBigImg] = useState("");
   const [louder, setLouder] = useState(false);
 
-  useEffect(() => {
-    if (!imageName) {
-      return;
-    }
-    setImages([]);
-    fetchImages(imageName);
-  }, [imageName]);
+  useEffect(
+    () => {
+      if (!imageName) {
+        return;
+      }
+      setImages([]);
+      fetchImages(imageName);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [imageName]
+  );
 
   useEffect(
-    (fetchImages) => {
+    () => {
       if (!imageName) {
         return;
       }
       fetchImages(imageName, page);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [page]
   );
 
