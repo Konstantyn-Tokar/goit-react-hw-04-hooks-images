@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import doFach from "../../helpers/ApiImg";
 import scroll from "../../helpers/scroll";
@@ -10,104 +10,82 @@ import Modal from "../Modal";
 import s from "./ImageGallery.module.css";
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 
-class ImageGallery extends Component {
-  state = {
-    images: null,
-    page: 1,
-    error: null,
-    status: "idle",
-    showModal: false,
-    bigImg: "",
-    louder: false,
+function ImageGallery({ imageName }) {
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState("idle");
+  const [showModal, setShowModal] = useState(false);
+  const [bigImg, setBigImg] = useState("");
+  const [louder, setLouder] = useState(false);
+
+  useEffect(() => {
+    if (!imageName) {
+      return;
+    }
+    setImages([]);
+    fetchImages(imageName);
+  }, [imageName]);
+
+  useEffect(
+    (fetchImages) => {
+      if (!imageName) {
+        return;
+      }
+      fetchImages(imageName, page);
+    },
+    [page]
+  );
+
+  const fetchImages = () => {
+    setLouder(true);
+    doFach(imageName, page)
+      .then((data) => {
+        setStatus("resolved");
+        setImages((images) => [...images, ...data]);
+        setLouder(false);
+        if (page > 1) {
+          scroll();
+        }
+      })
+      .catch((error) => {
+        setError(error);
+        setStatus("resjected");
+      });
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    const prevName = prevProps.imageName;
-    const nextName = this.props.imageName;
-    const prevPage = prevState.page;
-    const nextPage = this.state.page;
-    const { images } = this.state;
+  const onImageClick = (e) => {
+    const srs = e.target.dataset.img;
+    setBigImg(srs);
+    setShowModal(true);
+  };
 
-    if (prevName !== nextName) {
-      this.setState({ louder: true });
-
-      doFach(nextName, nextPage)
-        .then((data) =>
-          this.setState({ images: data, status: "resolved", louder: false })
-        )
-        .catch((error) => this.setState({ error, status: "resjected" }));
-    }
-
-    if (prevPage !== nextPage) {
-      this.setState({ louder: true });
-      doFach(nextName, nextPage)
-        .then((data) => {
-          this.setState({
-            images: [...images, ...data],
-            status: "resolved",
-            louder: false,
-          });
-          scroll();
-        })
-        .catch((error) => this.setState({ error, status: "resjected" }));
-    }
+  if (status === "idle") {
+    return <h1>Введите тематику поиска изображения</h1>;
   }
 
-  onLoadMore = () => {
-    const { page } = this.state;
-    this.setState({
-      page: page + 1,
-    });
-  };
+  if (status === "resjected") {
+    return <h1>{error.message}</h1>;
+  }
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
-  };
-
-  onImageClick = (e) => {
-    const srs = e.target.dataset.img;
-
-    this.setState({
-      bigImg: srs,
-      showModal: true,
-    });
-  };
-
-  render() {
-    const {
-      state: { status, images, bigImg, showModal, error, louder },
-      onImageClick,
-      onLoadMore,
-      toggleModal,
-    } = this;
-
-    if (status === "idle") {
-      return <h1>Введите тематику поиска изображения</h1>;
-    }
-
-    if (status === "resjected") {
-      return <h1>{error.message}</h1>;
-    }
-
-    if (status === "resolved") {
-      return (
-        <div className={s.imageGallery}>
-          <ImageGalleryList
-            imageslist={images}
-            onImageClick={onImageClick}
-            louder={louder}
-          />
-          {images.length > 1 && <Button onClick={onLoadMore} />}
-          {showModal && (
-            <Modal onClose={toggleModal}>
-              <img className={s.modalImg} src={bigImg} alt="Картинка" />
-            </Modal>
-          )}
-        </div>
-      );
-    }
+  if (status === "resolved") {
+    return (
+      <div className={s.imageGallery}>
+        <ImageGalleryList
+          imageslist={images}
+          onImageClick={onImageClick}
+          louder={louder}
+        />
+        {images.length > 1 && (
+          <Button onClick={() => setPage((prevPage) => prevPage + 1)} />
+        )}
+        {showModal && (
+          <Modal onClose={() => setShowModal(!showModal)}>
+            <img className={s.modalImg} src={bigImg} alt="Картинка" />
+          </Modal>
+        )}
+      </div>
+    );
   }
 }
 

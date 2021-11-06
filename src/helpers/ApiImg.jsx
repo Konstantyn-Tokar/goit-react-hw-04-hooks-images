@@ -17,7 +17,7 @@ function doFach(imageName, page) {
     .then((data) => {
       const lengthArr = data.hits.length;
       if (lengthArr === 0) {
-        toast.warn(`Нет изображений на тему ${imageName}`);
+        toast.warn(`Больше изображений на тему ${imageName} нет`);
       }
       return data.hits;
     });
